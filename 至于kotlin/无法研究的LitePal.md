@@ -14,7 +14,7 @@
 
 解析不了了只能摁造SQL了
 
-
+还是回到[SQLite](数据库从SQLite开始.md)吧
 
 ### LitePal
 
