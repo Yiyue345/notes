@@ -200,6 +200,6 @@ try{
 
 不过那些框架都是基于SQLite写的，至少能知道面对的是个啥罢
 
-下一集：LitePal我来辣！
+下一集：[LitePal](无法研究的LitePal.md)我来辣！
 
 下下一集：解析失败重回SQLite
