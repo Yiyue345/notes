@@ -1,3 +1,8 @@
+---
+tags:
+  - kotlin
+  - Android
+---
 这是一个比较方便的创建图表的库（因为没用过别的
 
 ## 如何搓一张图
@@ -12,7 +17,7 @@ implementation("com.github.PhilJay:MPAndroidChart:v3.1.0")
 每个图都要有一个**数据集**，`BarChart`要`BarDataSet`，`LineChart`要`LineDataSet`，数据集还要变成数据……一些属性要在图表中设置，还有一些要在**数据集**中设置
 
 #### 搓数据集
-首先要有一个**条目(entry)**的列表，之后再变成`DataSet`
+首先要有一个**条目(entry)** 的列表，之后再变成`DataSet`
 
 比如
 ```kotlin

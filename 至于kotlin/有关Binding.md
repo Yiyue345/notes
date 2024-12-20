@@ -1,3 +1,8 @@
+---
+tags:
+  - kotlin
+  - Android
+---
 如今已经没有什么kotlin-android-extensions了啊
 
 要方便也只能是`binding`了（吧
