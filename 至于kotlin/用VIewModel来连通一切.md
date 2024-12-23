@@ -1,8 +1,3 @@
----
-tags:
-  - kotlin
-  - Android
----
 ### ViewModel，你简直就是救世主
 
 但是为什么不能让Fragment直接访问Activity的值呢，就因为这样太丑陋了吗？
