@@ -1,8 +1,3 @@
----
-tags:
-  - kotlin
-  - Android
----
 ### 怎么又是JSON？
 
 > 好吧，我只是想起当年做MC整合包时手打JSON的日子了
