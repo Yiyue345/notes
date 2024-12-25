@@ -28,7 +28,7 @@ val people = gson.fromJson<List<Person>>(jsonData, typeOf)
 
 于是就要请出下一位选手登场
 
-#### 用Moshi解析~~（莫西莫西~~
+#### 用Moshi解析~~（もしもし~~
 
 相比GSON，Moshi对kt的支持更好，还有个专门给kt用的扩展，就叫Moshi-kotlin
 
