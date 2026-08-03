@@ -1,0 +1,9 @@
+{
+  "scannedAt": "2026-08-03",
+  "framework": "Astro 7 with Starlight 0.41.6",
+  "theme": "starlight-theme-obsidian 0.4.1",
+  "fontStack": "Starlight system fonts",
+  "palette": "Obsidian theme variables",
+  "motion": "motion-cut",
+  "spacing": "4pt scale introduced for the home page"
+}

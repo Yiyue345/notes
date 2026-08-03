@@ -1,3 +1,5 @@
 allowBuilds:
   esbuild: true
   sharp: true
+patchedDependencies:
+  starlight-site-graph@0.5.0: patches/starlight-site-graph@0.5.0.patch

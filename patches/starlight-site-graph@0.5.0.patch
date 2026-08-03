@@ -1,0 +1,13 @@
+diff --git a/config/index.ts b/config/index.ts
+index 8a38bbfd4aaf8e635b654de4c3719dad159a8ece..f0523e926eddde7c6a28f2b823a93c293e606fe1 100644
+--- a/config/index.ts
++++ b/config/index.ts
+@@ -2,7 +2,7 @@ import { AstroError } from 'astro/errors';
+ import { type StarlightSiteGraphConfig, starlightSiteGraphConfig, starlightSiteGraphConfigSchema } from './base';
+ 
+ function isObject(item: any): boolean {
+-	return (item && typeof item === 'object' && !Array.isArray(item));
++	return (item && typeof item === 'object' && !Array.isArray(item) && !(item instanceof Map));
+ }
+ 
+ /**

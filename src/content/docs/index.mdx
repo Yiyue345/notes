@@ -1,40 +1,106 @@
 ---
-title: Welcome to Starlight
-description: Get started building your docs site with Starlight.
-template: splash # Remove or comment out this line to display the site sidebar on this page.
+title: 【首页主标题】
+description: 【用一句话概括这个笔记站的内容。】
+tableOfContents: false
+template: splash
 hero:
-  tagline: Congrats on setting up a new Starlight project!
+  title: '<span class="home-eyebrow">Personal Notes / Index</span>【首页主标题】'
+  tagline: 【用一两句话说明这个笔记站记录什么，以及读者可以从哪里开始。】
   image:
-    file: ../../assets/houston.webp
-  actions:
-    - text: Example Guide
-      link: /guides/example/
-      icon: right-arrow
-    - text: Read the Starlight docs
-      link: https://starlight.astro.build
-      icon: external
-      variant: minimal
+    html: '<p class="home-intro-note">【一句较短的补充说明】</p>'
 ---
 
-import { Card, CardGrid } from '@astrojs/starlight/components';
+import { CardGrid, Icon, LinkCard } from '@astrojs/starlight/components';
+import '../../styles/home-index.css';
 
-## Next steps
+<div class="home-index">
+  <section class="home-section home-start" aria-labelledby="home-start-title">
+    <header class="home-section__head">
+      <span class="home-section__index" aria-hidden="true">01</span>
+      <h2 id="home-start-title">从这里开始</h2>
+      <p>【给首次访问者的简短引导。】</p>
+    </header>
 
-<CardGrid stagger>
-	<Card title="Update content" icon="pencil">
-		Edit `src/content/docs/index.mdx` to see this page change.
-	</Card>
-	<Card title="Change page layout" icon="document">
-		Delete `template: splash` in `src/content/docs/index.mdx` to display a
-		sidebar on this page.
-	</Card>
-	<Card title="Add new content" icon="add-document">
-		Add Markdown or MDX files to `src/content/docs` to create new pages.
-	</Card>
-	<Card title="Configure your site" icon="setting">
-		Edit your `sidebar` and other config in `astro.config.mjs`.
-	</Card>
-	<Card title="Read the docs" icon="open-book">
-		Learn more in [the Starlight Docs](https://starlight.astro.build/).
-	</Card>
-</CardGrid>
+    <CardGrid>
+      <LinkCard
+        title="【主要入口标题】"
+        description="【入口说明，占一到两行。】"
+        href="#"
+      />
+      <LinkCard
+        title="【次要入口标题】"
+        description="【入口说明，占一到两行。】"
+        href="#"
+      />
+    </CardGrid>
+  </section>
+
+  <section class="home-section home-recent" aria-labelledby="home-recent-title">
+    <header class="home-section__head">
+      <span class="home-section__index" aria-hidden="true">02</span>
+      <h2 id="home-recent-title">最近更新</h2>
+      <p>【这里显示近期新增或修改的笔记。】</p>
+    </header>
+
+    <ol class="home-entry-list">
+      <li>
+        <a href="#">
+          <span>
+            <strong>【笔记标题】</strong>
+            <small>【分类】　·　【更新日期】</small>
+          </span>
+          <Icon name="right-arrow" size="1em" />
+        </a>
+      </li>
+      <li>
+        <a href="#">
+          <span>
+            <strong>【笔记标题】</strong>
+            <small>【分类】　·　【更新日期】</small>
+          </span>
+          <Icon name="right-arrow" size="1em" />
+        </a>
+      </li>
+      <li>
+        <a href="#">
+          <span>
+            <strong>【笔记标题】</strong>
+            <small>【分类】　·　【更新日期】</small>
+          </span>
+          <Icon name="right-arrow" size="1em" />
+        </a>
+      </li>
+      <li>
+        <a href="#">
+          <span>
+            <strong>【笔记标题】</strong>
+            <small>【分类】　·　【更新日期】</small>
+          </span>
+          <Icon name="right-arrow" size="1em" />
+        </a>
+      </li>
+    </ol>
+  </section>
+
+  <section class="home-section home-categories" aria-labelledby="home-categories-title">
+    <header class="home-section__head">
+      <span class="home-section__index" aria-hidden="true">03</span>
+      <h2 id="home-categories-title">按主题浏览</h2>
+      <p>【按你自己的知识分类组织入口。】</p>
+    </header>
+
+    <CardGrid>
+      <LinkCard title="【分类名称】" description="【分类说明。】" href="#" />
+      <LinkCard title="【分类名称】" description="【分类说明。】" href="#" />
+      <LinkCard title="【分类名称】" description="【分类说明。】" href="#" />
+    </CardGrid>
+  </section>
+
+  <footer class="home-footer">
+    <span>© 【年份】 【站点名称】</span>
+    <span class="home-footer__links">
+      <a href="#">【页脚链接】</a>
+      <a href="#">【页脚链接】</a>
+    </span>
+  </footer>
+</div>

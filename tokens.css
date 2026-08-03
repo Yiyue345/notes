@@ -1,0 +1,43 @@
+/* Hallmark · token system: Obsidian-preserved Almanac · anchor hue: Starlight accent */
+:root {
+  --color-home-paper: var(--sl-color-bg);
+  --color-home-raised: var(--sl-color-gray-6);
+  --color-home-raised-hover: var(--sl-color-gray-5);
+  --color-home-ink: var(--sl-color-white);
+  --color-home-muted: var(--sl-color-gray-2);
+  --color-home-faint: var(--sl-color-gray-3);
+  --color-home-rule: var(--sl-color-hairline);
+  --color-home-rule-strong: var(--sl-color-gray-5);
+  --color-home-accent: var(--sl-color-accent);
+  --color-home-focus: var(--sl-color-accent-high);
+
+
+  --font-home-display: "Source Han Serif SC", "Noto Serif CJK SC", "Songti SC", "STSong", "SimSun", serif;
+  --font-home-body: var(--sl-font-system);
+  --font-home-mono: var(--sl-font-system-mono);
+
+  --space-home-1: 0.25rem;
+  --space-home-2: 0.5rem;
+  --space-home-3: 0.75rem;
+  --space-home-4: 1rem;
+  --space-home-5: 1.25rem;
+  --space-home-6: 1.5rem;
+  --space-home-8: 2rem;
+  --space-home-10: 2.5rem;
+  --space-home-12: 3rem;
+  --space-home-16: 4rem;
+
+  --text-home-label: 0.6875rem;
+  --text-home-small: 0.8125rem;
+  --text-home-body: 0.9375rem;
+  --text-home-section: 1.4rem;
+  --text-home-display: clamp(2.15rem, 6vw, 3.8rem);
+
+  --rule-home-thin: 1px;
+  --radius-home-sm: var(--sl-border-radius-sm, 0.25rem);
+  --radius-home-md: var(--sl-border-radius-md, 0.5rem);
+
+  --ease-home-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --dur-home-short: 180ms;
+}
+
