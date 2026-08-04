@@ -2,6 +2,12 @@
   "name": "my-blog",
   "type": "module",
   "version": "0.0.1",
+  "packageManager": "pnpm@9.15.9",
+  "pnpm": {
+    "patchedDependencies": {
+      "starlight-site-graph@0.5.0": "patches/starlight-site-graph@0.5.0.patch"
+    }
+  },
   "scripts": {
     "dev": "astro dev",
     "start": "astro dev",
