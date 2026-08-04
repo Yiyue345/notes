@@ -12,6 +12,7 @@ import { remarkObsidianLinks } from './src/plugins/remark-obsidian-links.mjs';
 // https://astro.build/config
 export default defineConfig({
 	site: "https://notes.yiyuemeow.com",
+	output: "static",
 	markdown: {
 		processor: unified({
 			remarkPlugins: [remarkObsidianLinks, remarkMath],
