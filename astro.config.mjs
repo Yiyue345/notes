@@ -88,6 +88,15 @@ export default defineConfig({
 					}],
 				},
 				{
+					label: 'AI 速成的学习资料',
+					collapsed: true,
+					items: [{
+						autogenerate: {
+							directory: 'AI速成',
+							collapsed: true,
+						}
+					}],
+				},				{
 					label: '其他',
 					collapsed: true,
 					items: [
