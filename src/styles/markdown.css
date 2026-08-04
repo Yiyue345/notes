@@ -5,3 +5,29 @@
 	overflow-y: hidden;
 	padding-block: 0.25rem;
 }
+
+/* Keep article headings compact without affecting the homepage. */
+main:not(:has(.home-index)) h1#_top,
+main:not(:has(.home-index)) .sl-markdown-content h1 {
+	font-size: clamp(1.875rem, 4vw, 2.125rem);
+}
+
+main:not(:has(.home-index)) .sl-markdown-content h2 {
+	font-size: clamp(1.5rem, 3vw, 1.75rem);
+}
+
+main:not(:has(.home-index)) .sl-markdown-content h3 {
+	font-size: clamp(1.25rem, 2.5vw, 1.5rem);
+}
+
+main:not(:has(.home-index)) .sl-markdown-content h4 {
+	font-size: 1.125rem;
+}
+
+main:not(:has(.home-index)) .sl-markdown-content h5 {
+	font-size: 1rem;
+}
+
+main:not(:has(.home-index)) .sl-markdown-content h6 {
+	font-size: 0.9375rem;
+}
