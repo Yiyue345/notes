@@ -1,0 +1,7 @@
+@import 'katex/dist/katex.min.css';
+
+.sl-markdown-content .katex-display {
+	overflow-x: auto;
+	overflow-y: hidden;
+	padding-block: 0.25rem;
+}

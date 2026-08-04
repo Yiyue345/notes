@@ -1,35 +1,37 @@
 ---
-title: 【首页主标题】
-description: 【用一句话概括这个笔记站的内容。】
+title: 依月的备忘录
+description: 学习，记录，复用
 tableOfContents: false
 template: splash
 hero:
-  title: '<span class="home-eyebrow">Personal Notes / Index</span>【首页主标题】'
-  tagline: 【用一两句话说明这个笔记站记录什么，以及读者可以从哪里开始。】
+  title: '<span class="home-eyebrow">Personal Notes / Index</span>依月的备忘录'
+  tagline: 学习，记录，复用
   image:
-    html: '<p class="home-intro-note">【一句较短的补充说明】</p>'
+    html: '<p class="home-intro-note">就是一些笔记啦</p>'
 ---
 
 import { CardGrid, Icon, LinkCard } from '@astrojs/starlight/components';
+import HomeSidebar from '../../components/HomeSidebar.astro';
 import '../../styles/home-index.css';
 
 <div class="home-index">
+  <HomeSidebar />
   <section class="home-section home-start" aria-labelledby="home-start-title">
     <header class="home-section__head">
       <span class="home-section__index" aria-hidden="true">01</span>
       <h2 id="home-start-title">从这里开始</h2>
-      <p>【给首次访问者的简短引导。】</p>
+      <p>大致分为两类</p>
     </header>
 
     <CardGrid>
       <LinkCard
-        title="【主要入口标题】"
-        description="【入口说明，占一到两行。】"
+        title="人工的古法笔记"
+        description="日积月累"
         href="#"
       />
       <LinkCard
-        title="【次要入口标题】"
-        description="【入口说明，占一到两行。】"
+        title="AI 生成的复习资料"
+        description="这才是 AI 应试的正确方式"
         href="#"
       />
     </CardGrid>
@@ -39,7 +41,7 @@ import '../../styles/home-index.css';
     <header class="home-section__head">
       <span class="home-section__index" aria-hidden="true">02</span>
       <h2 id="home-recent-title">最近更新</h2>
-      <p>【这里显示近期新增或修改的笔记。】</p>
+      <p>新的东西</p>
     </header>
 
     <ol class="home-entry-list">
@@ -86,21 +88,21 @@ import '../../styles/home-index.css';
     <header class="home-section__head">
       <span class="home-section__index" aria-hidden="true">03</span>
       <h2 id="home-categories-title">按主题浏览</h2>
-      <p>【按你自己的知识分类组织入口。】</p>
+      <p>一些内容分类</p>
     </header>
 
     <CardGrid>
-      <LinkCard title="【分类名称】" description="【分类说明。】" href="#" />
-      <LinkCard title="【分类名称】" description="【分类说明。】" href="#" />
-      <LinkCard title="【分类名称】" description="【分类说明。】" href="#" />
+      <LinkCard title="Android 和 Kotlin" description="安卓原生" href="至于kotlin" />
+      <LinkCard title="Flutter 和 Dart" description="Flutter 开发" href="#" />
+      <LinkCard title="数学笔记" description="当初复习做的笔记" href="#" />
     </CardGrid>
   </section>
 
   <footer class="home-footer">
-    <span>© 【年份】 【站点名称】</span>
+    <span>© 2026 依月的备忘录</span>
     <span class="home-footer__links">
-      <a href="#">【页脚链接】</a>
-      <a href="#">【页脚链接】</a>
+      <a href="#">博客</a>
+      <a href="https://astro.build/">Astro</a>
     </span>
   </footer>
 </div>

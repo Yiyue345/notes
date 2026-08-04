@@ -1,0 +1,251 @@
+---
+import Sidebar from '@astrojs/starlight/components/Sidebar.astro';
+import { Icon } from '@astrojs/starlight/components';
+---
+
+<div class="home-sidebar-control" data-home-sidebar-control>
+	<button
+		class="home-sidebar-trigger"
+		type="button"
+		aria-controls="home-sidebar-dialog"
+		aria-expanded="false"
+		aria-label="打开站点目录"
+		data-home-sidebar-open
+	>
+		<Icon name="bars" size="1.25rem" />
+	</button>
+
+	<dialog
+		class="home-sidebar-dialog"
+		id="home-sidebar-dialog"
+		aria-labelledby="home-sidebar-title"
+		data-home-sidebar-dialog
+	>
+		<header class="home-sidebar-header">
+			<h2 id="home-sidebar-title">目录</h2>
+			<button
+				class="home-sidebar-close"
+				type="button"
+				aria-label="关闭站点目录"
+				data-home-sidebar-close
+			>
+				<Icon name="close" size="1.25rem" />
+			</button>
+		</header>
+
+		<nav class="home-sidebar-content" aria-label="站点目录">
+			<Sidebar />
+		</nav>
+	</dialog>
+</div>
+
+<script>
+	function initializeHomeSidebar() {
+		document.querySelectorAll<HTMLElement>('[data-home-sidebar-control]').forEach((control) => {
+			const mainFrame = control.closest<HTMLElement>('.main-frame');
+			const page = mainFrame?.parentElement;
+			if (mainFrame && page) {
+				page.querySelectorAll(':scope > [data-home-sidebar-control]').forEach((staleControl) => staleControl.remove());
+				page.insertBefore(control, mainFrame);
+			}
+
+			if (control.dataset.initialized === 'true') return;
+
+			const trigger = control.querySelector<HTMLButtonElement>('[data-home-sidebar-open]');
+			const dialog = control.querySelector<HTMLDialogElement>('[data-home-sidebar-dialog]');
+			const closeButton = control.querySelector<HTMLButtonElement>('[data-home-sidebar-close]');
+			if (!trigger || !dialog || !closeButton) return;
+
+			control.dataset.initialized = 'true';
+
+			const setOpenState = (open: boolean) => {
+				trigger.setAttribute('aria-expanded', String(open));
+				trigger.setAttribute('aria-label', open ? '站点目录已打开' : '打开站点目录');
+				document.documentElement.classList.toggle('home-sidebar-open', open);
+			};
+
+			const closeSidebar = () => {
+				if (!dialog.open) return;
+				dialog.close();
+				trigger.focus();
+			};
+
+			trigger.addEventListener('click', () => {
+				if (dialog.open) return;
+				dialog.showModal();
+				setOpenState(true);
+			});
+
+			closeButton.addEventListener('click', closeSidebar);
+
+			dialog.addEventListener('click', (event) => {
+				if (event.target !== dialog) return;
+				const bounds = dialog.getBoundingClientRect();
+				const clickedBackdrop =
+					event.clientX < bounds.left ||
+					event.clientX > bounds.right ||
+					event.clientY < bounds.top ||
+					event.clientY > bounds.bottom;
+				if (clickedBackdrop) closeSidebar();
+			});
+
+			dialog.addEventListener('close', () => {
+				setOpenState(false);
+				trigger.focus();
+			});
+			dialog.addEventListener('cancel', () => setOpenState(false));
+			dialog.querySelectorAll<HTMLAnchorElement>('a[href]').forEach((link) => {
+				link.addEventListener('click', () => dialog.close());
+			});
+
+		});
+	}
+
+	initializeHomeSidebar();
+	document.addEventListener('astro:page-load', initializeHomeSidebar);
+</script>
+
+<style>
+	/* Hallmark · component scope: Starlight sidebar drawer · tone: restrained editorial · anchor hue: inherited */
+	.home-sidebar-trigger,
+	.home-sidebar-close {
+		display: grid;
+		place-items: center;
+		width: var(--space-home-12);
+		height: var(--space-home-12);
+		padding: var(--space-home-2);
+		border: 0;
+		border-radius: var(--radius-home-sm);
+		background-color: transparent;
+		color: var(--sl-color-white);
+		cursor: pointer;
+	}
+
+	.home-sidebar-trigger {
+		position: fixed;
+		z-index: calc(var(--sl-z-index-navbar) + 1);
+		inset-block-start: calc((var(--sl-nav-height) - var(--space-home-12)) / 2);
+		inset-inline-start: var(--sl-nav-pad-x);
+	}
+
+	.home-sidebar-close {
+		flex: 0 0 auto;
+	}
+
+	.home-sidebar-trigger:focus-visible,
+	.home-sidebar-close:focus-visible {
+		outline: 2px solid var(--color-home-focus);
+		outline-offset: var(--space-home-1);
+	}
+
+	.home-sidebar-trigger:active,
+	.home-sidebar-close:active {
+		transform: translateY(var(--rule-home-thin));
+	}
+
+	.home-sidebar-trigger:disabled,
+	.home-sidebar-close:disabled {
+		opacity: 0.5;
+		cursor: not-allowed;
+	}
+
+	.home-sidebar-dialog {
+		position: fixed;
+		inset-block: var(--sl-nav-height) 0;
+		inset-inline: 0 auto;
+		width: min(var(--sl-sidebar-width), calc(100% - var(--space-home-12)));
+		height: calc(100dvh - var(--sl-nav-height));
+		max-width: none;
+		max-height: none;
+		margin: 0;
+		padding: 0;
+		border: 0;
+		border-inline-end: var(--rule-home-thin) solid var(--sl-color-hairline-shade);
+		border-radius: 0;
+		background-color: var(--sl-color-bg-sidebar);
+		color: var(--sl-color-white);
+		overflow: hidden;
+	}
+
+	.home-sidebar-dialog[open] {
+		animation: home-sidebar-enter var(--dur-home-short) var(--ease-home-out) both;
+	}
+
+	.home-sidebar-dialog::backdrop {
+		background-color: color-mix(in oklch, var(--sl-color-black) 62%, transparent);
+		animation: home-sidebar-backdrop-enter var(--dur-home-short) var(--ease-home-out) both;
+	}
+
+	.home-sidebar-header {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: var(--space-home-4);
+		min-height: var(--sl-nav-height);
+		padding: var(--sl-nav-pad-y) var(--sl-sidebar-pad-x);
+		border-block-end: var(--rule-home-thin) solid var(--sl-color-hairline-shade);
+	}
+
+	.home-sidebar-header h2 {
+		margin: 0;
+		font-family: var(--font-home-display);
+		font-size: var(--sl-text-lg);
+		font-style: normal;
+		line-height: 1.2;
+	}
+
+	.home-sidebar-content {
+		height: calc(100% - var(--sl-nav-height));
+		padding: var(--space-home-4) var(--sl-sidebar-pad-x) var(--space-home-8);
+		overflow-y: auto;
+		scrollbar-gutter: stable;
+	}
+
+	:global(html:has(.home-index) .page > header.header .title-wrapper) {
+		margin-inline-start: calc(var(--space-home-12) + var(--space-home-2));
+	}
+
+	:global(html.home-sidebar-open) {
+		overflow: hidden;
+	}
+
+
+	@media (hover: hover) and (pointer: fine) {
+		.home-sidebar-trigger:hover,
+		.home-sidebar-close:hover {
+			color: var(--color-home-accent);
+		}
+	}
+
+	@keyframes home-sidebar-enter {
+		from {
+			opacity: 0;
+			transform: translateX(-100%);
+		}
+		to {
+			opacity: 1;
+			transform: translateX(0);
+		}
+	}
+
+	@keyframes home-sidebar-backdrop-enter {
+		from {
+			opacity: 0;
+		}
+		to {
+			opacity: 1;
+		}
+	}
+
+	@media (prefers-reduced-motion: reduce) {
+		.home-sidebar-trigger:active,
+		.home-sidebar-close:active {
+			transform: none;
+		}
+
+		.home-sidebar-dialog[open],
+		.home-sidebar-dialog::backdrop {
+			animation-duration: 0.01ms;
+		}
+	}
+</style>
