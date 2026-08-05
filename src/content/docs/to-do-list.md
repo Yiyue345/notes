@@ -26,17 +26,17 @@ lastUpdated: 1453-05-29
 
 [细碎的玩意](至于kotlin/细碎的玩意·其一.md)的控件部分还要更多补充
 
-[Future](用Flutter让你飞起来！/你的%20Future%20有%20Promise%20吗？.md)还没完工
+[Future](用Flutter让你飞起来！/Future%20如%20Stream%20般飘来.md)还没完工
 
 加上shadowThemeOnly -> InheritedTheme.capture
 
 # 计划中的东西
 
-更多数据结构（栈，队列和树！）
+更多数据结构（栈，队列和树！）（还有必要吗？
 
 还没动工的room
 
-Flutter还在不知道哪里
+~~Flutter还在不知道哪里~~
 
 数学！我们需要数学！
 

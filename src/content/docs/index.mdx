@@ -13,6 +13,7 @@ hero:
 import { CardGrid, LinkCard } from '@astrojs/starlight/components';
 import HomeSidebar from '../../components/HomeSidebar.astro';
 import RecentArticles from '../../components/RecentArticles.astro';
+import SiteStats from '../../components/SiteStats.astro';
 import '../../styles/home-index.css';
 
 <div class="home-index">
@@ -62,11 +63,13 @@ import '../../styles/home-index.css';
     </CardGrid>
   </section>
 
+  <SiteStats />
+
   <footer class="home-footer">
     <span>© 2026 依月的备忘录</span>
     <span class="home-footer__links">
       <a href="#" target="_blank" rel="noopener noreferrer">博客</a>
-      <a href="https://astro.build/" target="_blank" rel="noopener noreferrer">Astro</a>
+      <a href="https://astro.build/" target="_blank" rel="noopener noreferrer">基于 Astro 构建</a>
     </span>
   </footer>
 </div>

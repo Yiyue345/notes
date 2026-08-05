@@ -1,0 +1,117 @@
+---
+import { getCollection } from 'astro:content';
+
+const isIndexPage = (filePath?: string) => /(^|[\\/])index\.mdx?$/.test(filePath ?? '');
+
+const countTextCharacters = (body: string) => {
+	const text = body
+		.replace(/```[\s\S]*?```/g, ' ')
+		.replace(/~~~[\s\S]*?~~~/g, ' ')
+		.replace(/\$\$[\s\S]*?\$\$/g, ' ')
+		.replace(/\$[^$\n]*\$/g, ' ')
+		.replace(/!\[\[[^\]]+\]\]/g, ' ')
+		.replace(/!\[[^\]]*\]\([^)]*\)/g, ' ')
+		.replace(/\[([^\]]+)\]\([^)]*\)/g, '$1')
+		.replace(/\[\[(?:[^\]|]+\|)?([^\]]+)\]\]/g, '$1')
+		.replace(/`[^`]*`/g, ' ')
+		.replace(/<!--[\s\S]*?-->/g, ' ')
+		.replace(/<[^>]+>/g, ' ');
+
+	return text.match(/[\p{L}\p{N}]/gu)?.length ?? 0;
+};
+
+const articles = (await getCollection('docs', ({ data }) => data.draft !== true))
+	.filter((entry) => !isIndexPage(entry.filePath));
+
+const totalCharacters = articles.reduce(
+	(total, article) => total + countTextCharacters(article.body ?? ''),
+	0,
+);
+
+const formatNumber = new Intl.NumberFormat('zh-CN').format;
+---
+
+<section class="home-stats" aria-label="站点统计">
+	<h2>一共记录了：</h2>
+	<div class="home-stats__grid">
+		<article class="home-stat-card">
+			<span>文章</span>
+			<p><strong>{formatNumber(articles.length)}</strong><small>篇</small></p>
+		</article>
+		<article class="home-stat-card">
+			<span>字数</span>
+			<p><strong>{formatNumber(totalCharacters)}</strong><small>字</small></p>
+		</article>
+	</div>
+</section>
+
+<style>
+	.home-stats {
+		padding-block: var(--space-home-8);
+		border-block-end: var(--rule-home-thin) solid var(--color-home-rule);
+	}
+
+	.home-stats h2 {
+		margin: 0 0 var(--space-home-4);
+		color: var(--color-home-ink);
+		font-family: var(--font-home-display);
+		font-size: clamp(1.25rem, 2vw, 1.5rem);
+		font-weight: 700;
+		letter-spacing: -0.02em;
+	}
+
+	.home-stats__grid {
+		display: grid;
+		grid-template-columns: repeat(2, minmax(0, 1fr));
+		gap: var(--space-home-3);
+	}
+
+	.home-stat-card {
+		display: flex;
+		align-items: flex-end;
+		justify-content: space-between;
+		gap: var(--space-home-4);
+		min-width: 0;
+		min-height: 7.5rem;
+		margin: 0;
+		padding: var(--space-home-5);
+		border: var(--rule-home-thin) solid var(--color-home-rule);
+		border-radius: var(--radius-home-md);
+		background: transparent;
+		box-shadow: none;
+	}
+
+	.home-stat-card > span {
+		color: var(--color-home-muted);
+		font-size: clamp(1rem, 1.8vw, 1.2rem);
+		font-weight: 600;
+	}
+
+	.home-stat-card p {
+		display: flex;
+		align-items: baseline;
+		gap: var(--space-home-2);
+		min-width: 0;
+		margin: 0;
+		color: var(--color-home-ink);
+	}
+
+	.home-stat-card strong {
+		font-family: var(--font-home-display);
+		font-size: clamp(1.75rem, 4vw, 2.5rem);
+		font-weight: 700;
+		letter-spacing: -0.035em;
+		line-height: 1;
+	}
+
+	.home-stat-card small {
+		color: var(--color-home-faint);
+		font-size: var(--text-home-label);
+	}
+
+	@media (max-width: 30rem) {
+		.home-stats {
+			grid-template-columns: minmax(0, 1fr);
+		}
+	}
+</style>
