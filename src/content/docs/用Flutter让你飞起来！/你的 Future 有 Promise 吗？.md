@@ -1,10 +1,13 @@
 ---
-title: "你的Future是怎样的？"
-description: "我眼中的未来又是何种色彩？"
-lastUpdated: 2025-02-22
+title: 你的 Future 有 Promise 吗？
+description: 我眼中的未来又是何种色彩？
+lastUpdated: 2026-08-05
 tags:
-  - "dart"
+  - dart
 ---
+这是两个写 Dart 时必然要用到的类
+
+# Future
 
 `Future`是一个类，可以用来做一些比较耗时的操作但不阻塞主线程，等到需要用其返回值时再用
 
@@ -27,7 +30,8 @@ Future<String> fetchUsername() { // 不显式指定这个<String>也是可以的
 
 有的兄弟，有的
 
-`async`（异步）这个单词可以加在函数体外边，自动把返回值包装成`Future`对象，同时也开一个线程，比如这样
+`async`（异步）这个单词可以加在函数体外边，自动把返回值包装成`Future`对象，同时~~开一个线程~~让它稍后执行，比如这样
+
 
 ```dart
 Future<String> fetchUsername() async {  
@@ -35,6 +39,8 @@ Future<String> fetchUsername() async {
   return 'Alice';  
 }
 ```
+
+其实本质上就是把这个任务放到队列中去，等更重要的任务执行完再执行它
 
 这可真是太方便了，可我们如果要用到返回值的时候该怎么办呢？
 

@@ -24,6 +24,9 @@ export default defineConfig({
 			title: 'Notes',
 			customCss: ['./src/styles/markdown.css'],
 			social: [{ icon: 'github', label: 'GitHub', href: 'https://github.com/YiYue345' }],
+			components: {
+				SocialIcons: './src/components/SocialIcons.astro',
+			},
 			defaultLocale: "root",
 			locales: {
 				root: {

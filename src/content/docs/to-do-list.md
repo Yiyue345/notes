@@ -26,7 +26,7 @@ lastUpdated: 1453-05-29
 
 [细碎的玩意](至于kotlin/细碎的玩意·其一.md)的控件部分还要更多补充
 
-[Future](用Flutter让你飞起来！/你的Future是怎样的？.md)还没完工
+[Future](用Flutter让你飞起来！/你的%20Future%20有%20Promise%20吗？.md)还没完工
 
 加上shadowThemeOnly -> InheritedTheme.capture
 

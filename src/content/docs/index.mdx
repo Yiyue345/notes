@@ -10,8 +10,9 @@ hero:
     html: '<p class="home-intro-note">就是一些笔记啦</p>'
 ---
 
-import { CardGrid, Icon, LinkCard } from '@astrojs/starlight/components';
+import { CardGrid, LinkCard } from '@astrojs/starlight/components';
 import HomeSidebar from '../../components/HomeSidebar.astro';
+import RecentArticles from '../../components/RecentArticles.astro';
 import '../../styles/home-index.css';
 
 <div class="home-index">
@@ -44,44 +45,7 @@ import '../../styles/home-index.css';
       <p>新的东西</p>
     </header>
 
-    <ol class="home-entry-list">
-      <li>
-        <a href="ai速成/现代检测技术与系统/00考试重点与复习路线">
-          <span>
-            <strong>现代检测技术与系统</strong>
-            <small>AI 速成 / 2026.06</small>
-          </span>
-          <Icon name="right-arrow" size="1em" />
-        </a>
-      </li>
-      <li>
-        <a href="#">
-          <span>
-            <strong>【笔记标题】</strong>
-            <small>【分类】　·　【更新日期】</small>
-          </span>
-          <Icon name="right-arrow" size="1em" />
-        </a>
-      </li>
-      <li>
-        <a href="#">
-          <span>
-            <strong>【笔记标题】</strong>
-            <small>【分类】　·　【更新日期】</small>
-          </span>
-          <Icon name="right-arrow" size="1em" />
-        </a>
-      </li>
-      <li>
-        <a href="#">
-          <span>
-            <strong>【笔记标题】</strong>
-            <small>【分类】　·　【更新日期】</small>
-          </span>
-          <Icon name="right-arrow" size="1em" />
-        </a>
-      </li>
-    </ol>
+    <RecentArticles />
   </section>
 
   <section class="home-section home-categories" aria-labelledby="home-categories-title">
@@ -101,8 +65,8 @@ import '../../styles/home-index.css';
   <footer class="home-footer">
     <span>© 2026 依月的备忘录</span>
     <span class="home-footer__links">
-      <a href="#">博客</a>
-      <a href="https://astro.build/">Astro</a>
+      <a href="#" target="_blank" rel="noopener noreferrer">博客</a>
+      <a href="https://astro.build/" target="_blank" rel="noopener noreferrer">Astro</a>
     </span>
   </footer>
 </div>

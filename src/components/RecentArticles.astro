@@ -1,0 +1,51 @@
+---
+import { getCollection } from 'astro:content';
+import { Icon } from '@astrojs/starlight/components';
+
+const categoryLabels: Record<string, string> = {
+	'ai速成': 'AI 速成',
+	math: '数学',
+	'用flutter让你飞起来': 'Flutter',
+	'看看c艹': 'C++',
+	'至于kotlin': 'Kotlin / Android',
+	'随便写写': '杂谈',
+};
+
+const isIndexPage = (filePath?: string) => /(^|[\\/])index\.mdx?$/.test(filePath ?? '');
+
+const formatDate = (date: Date) => {
+	const year = date.getUTCFullYear();
+	const month = String(date.getUTCMonth() + 1).padStart(2, '0');
+	const day = String(date.getUTCDate()).padStart(2, '0');
+	return `${year}.${month}.${day}`;
+};
+
+const getCategory = (id: string) => {
+	const root = id.split('/')[0];
+	return categoryLabels[root] ?? root;
+};
+
+const recentArticles = (await getCollection('docs', ({ data }) => data.draft !== true))
+	.filter((entry) => entry.data.lastUpdated instanceof Date && !isIndexPage(entry.filePath))
+	.map((entry) => ({
+		id: entry.id,
+		title: entry.data.title,
+		updatedAt: entry.data.lastUpdated as Date,
+	}))
+	.sort((a, b) => b.updatedAt.valueOf() - a.updatedAt.valueOf() || a.id.localeCompare(b.id, 'zh-CN'))
+	.slice(0, 4);
+---
+
+<ol class="home-entry-list">
+	{recentArticles.map((article) => (
+		<li>
+			<a href={`/${article.id}/`}>
+				<span>
+					<strong>{article.title}</strong>
+					<small>{getCategory(article.id)}　·　{formatDate(article.updatedAt)}</small>
+				</span>
+				<Icon name="right-arrow" size="1em" />
+			</a>
+		</li>
+	))}
+</ol>
