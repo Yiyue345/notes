@@ -1,13 +1,9 @@
 ---
 title: Future 如 Stream 般飘来
 description: 我眼中的未来又是何种色彩？
-lastUpdated: 2026-08-05
+lastUpdated: 2026-08-09
 tags:
   - dart
-banner: 
-  content: |
-    该页面尚未完工
-
 ---
 这是两个写 Dart 异步时必然要用到的类，必须要明白的是，Dart 一般都是单线程的，除非自己开 Isolate
 
@@ -93,6 +89,30 @@ Stream<int> countStream() async* {
 
 发现了吗，和`Future`不同的是，`Stream`返回一个值需要用`yield`
 
+其实除了一般的`yeild`，还有一个`yeild*`，用来返回一个`Stream`：
+
+```dart
+Stream<int> firstStream() async* {
+  yield 1;
+  yield 2;
+}
+
+Stream<int> secondStream() async* {
+  yield 0;
+  yield* firstStream();
+  yield 3;
+}
+```
+
+然后能得到：
+
+```
+0
+1
+2
+3
+```
+
 然后我们遇到了和上面类似的问题：怎么拿到它的返回值呢？
 
 此时你可能想到了`await`，但是先别急！我们可以直接用`listen`来监听：
@@ -115,4 +135,44 @@ countStream().listen(
 
 ### 也等等你的流！
 
-我们当然不能总是只用监听器的，不过也不能直接用`await`，而是用`await for`，它能像`for-in`一样持续遍历`Stream`的返回值
+我们当然不能总是只用监听器的，不过也不能直接用`await`，而是用`await for`，它能像`for-in`一样持续遍历`Stream`的返回值，比如
+
+```dart
+Future<void> main() async {
+  await for (final value in countStream()) {
+    print('收到：$value');
+  }
+
+  print('Stream 已结束');
+}
+```
+
+这样就可以不断地**收到**了╰(￣ω￣ｏ)
+
+### 还有些别的事
+
+一般的`Stream`是不能被监听多次的，不然可能会报错，如果想要监听多次，就要用广播`Stream`：
+
+```dart
+final controller = StreamController<int>.broadcast();
+
+controller.stream.listen((value) {
+  print('页面 A：$value');
+});
+
+controller.stream.listen((value) {
+  print('页面 B：$value');
+});
+
+controller.add(10);
+```
+
+之后就会输出
+
+```text
+页面 A：10 页面 B：10
+```
+
+类似不少集合，`Stream`也有`.map()`和`.where()`这些方法
+
+顺带一提，`Future`和`Stream`在一定程度上是可以相互转化的，不过嘛……感觉用起来也比较一般
