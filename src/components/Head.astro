@@ -1,0 +1,26 @@
+---
+import DefaultHead from '@astrojs/starlight/components/Head.astro';
+
+const { entry } = Astro.locals.starlightRoute;
+const isIndexPage = /(^|[\\/])index\.mdx?$/.test(entry.filePath ?? '');
+const isErrorPage = entry.id === '404' || entry.id.endsWith('/404');
+const analyticsType = entry.data.draft !== true && !isIndexPage && !isErrorPage ? 'article' : 'page';
+---
+
+<DefaultHead />
+<meta name="notes:analytics-type" content={analyticsType} />
+<meta name="notes:analytics-title" content={entry.data.title} />
+<script>
+	import { initSiteAnalytics } from '../scripts/analytics';
+
+	const runtimeWindow = window as Window & {
+		__notesAnalyticsPageLoadHandler?: () => void;
+	};
+
+	if (runtimeWindow.__notesAnalyticsPageLoadHandler) {
+		document.removeEventListener('astro:page-load', runtimeWindow.__notesAnalyticsPageLoadHandler);
+	}
+	runtimeWindow.__notesAnalyticsPageLoadHandler = initSiteAnalytics;
+	document.addEventListener('astro:page-load', initSiteAnalytics);
+	initSiteAnalytics();
+</script>
