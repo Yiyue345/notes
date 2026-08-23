@@ -22,6 +22,7 @@ export default defineConfig({
 	integrations: [
 		starlight({
 			title: 'Notes',
+			favicon: '/favicon.png',
 			customCss: ['./src/styles/markdown.css'],
 			social: [{ icon: 'github', label: 'GitHub', href: 'https://github.com/YiYue345' }],
 			components: {
