@@ -1,0 +1,43 @@
+---
+import DefaultFooter from '@astrojs/starlight/components/Footer.astro';
+
+const isHomePage = Astro.url.pathname === '/';
+---
+
+<DefaultFooter />
+{
+	!isHomePage && (
+		<p class="site-license">
+			© 2026 依月的备忘录 · 本站原创内容采用{' '}
+			<a
+				href="https://creativecommons.org/licenses/by-sa/4.0/"
+				target="_blank"
+				rel="license noopener noreferrer"
+			>
+				CC BY-SA 4.0
+			</a>{' '}
+			许可
+		</p>
+	)
+}
+
+<style>
+	.site-license {
+		margin: 1.5rem 0 0;
+		padding-block-start: 1.5rem;
+		border-block-start: 1px solid var(--sl-color-gray-5);
+		color: var(--sl-color-gray-3);
+		font-size: var(--sl-text-xs);
+		text-align: center;
+	}
+
+	.site-license a {
+		color: inherit;
+		text-underline-offset: 0.2em;
+	}
+
+	.site-license a:hover,
+	.site-license a:focus-visible {
+		color: var(--sl-color-white);
+	}
+</style>
