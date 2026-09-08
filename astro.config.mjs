@@ -26,6 +26,7 @@ export default defineConfig({
 			customCss: ['./src/styles/markdown.css'],
 			social: [{ icon: 'github', label: 'GitHub', href: 'https://github.com/YiYue345' }],
 			components: {
+				Footer: './src/components/Footer.astro',
 				Head: './src/components/Head.astro',
 				SocialIcons: './src/components/SocialIcons.astro',
 			},
