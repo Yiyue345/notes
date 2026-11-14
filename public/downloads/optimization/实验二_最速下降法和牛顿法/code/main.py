@@ -1,8 +1,4 @@
-"""单文件实验二：最速下降法、精确线搜索和基本牛顿法。
 
-默认在 PyCharm 控制台显示首轮和周期性迭代信息，避免长迭代刷屏。
-实际函数 f1、f2、f3 及梯度/Hessian 写在文件顶部，之后是求解算法。
-"""
 
 import argparse
 import csv
@@ -16,10 +12,6 @@ matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 import numpy as np
 
-
-# ==============================================================================
-# 1. 实际问题的目标函数与导数  修改题目先看这里
-# ==============================================================================
 
 Q1 = np.array([[21.0, 4.0], [4.0, 15.0]])
 Q2 = np.array([[21.0, 4.0], [4.0, 1.0]])
@@ -89,23 +81,15 @@ def h3(x):
 
 # Q 是 Hessian，c 是线性项系数；正定 Q 时有唯一极小点。
 def quadratic(Q, c, constant=0.0):
-    """构造 f(x)=1/2*x^T Q x+c^T x+constant 的函数、梯度和 Hessian。"""
     return (lambda x: float(0.5 * x @ Q @ x + c @ x + constant), lambda x: Q @ x + c, lambda x: Q)
 
 
-# ==============================================================================
-# 公共：输出格式化工具
-# ==============================================================================
-
-
 def fmt_vector(values, precision=5):
-    """统一格式化迭代点或搜索方向，避免 NumPy 的浮点表示占满控制台。"""
     arr = np.asarray(values, dtype=float)
     return "[" + ", ".join(f"{value:.{precision}g}" for value in arr) + "]"
 
 
 def print_progress(row, every=1000):
-    """长迭代过程只打印前 3 次、整百/整千次，减少刷屏。"""
     k = row["k"]
     if k <= 3 or k % every == 0:
         alpha = row.get("alpha")
@@ -118,7 +102,6 @@ def print_progress(row, every=1000):
 
 
 def print_summary(result):
-    """用统一格式概括目标函数值、迭代次数与最终状态。"""
     print(
         f"  -> 状态={result.get('status', 'completed')}；"
         f"迭代={result['iterations']}；"
@@ -129,118 +112,19 @@ def print_summary(result):
     )
 
 
-# 2. 算法实现
-# ==============================================================================
 
-# 只负责选步长，不负责更新 x；适用于最速下降法、拟牛顿法等。
-def armijo(f, x, g, d, alpha0=1.0, c1=0.0001, rho=0.5, bounds=None):
-    """Armijo 回溯线搜索：逐步缩小 alpha，直到目标函数有足够的下降量。
+if __package__:
+    from .methods.steepest_descent import steepest_descent
+    from .methods.newton import newton
+else:
+    from methods.steepest_descent import steepest_descent
+    from methods.newton import newton
 
-    f：目标函数；x：当前位置；g：当前位置的梯度；d：下降方向。
-    c1：充分下降系数；rho：每次回溯后步长乘以 rho。
-    返回满足 f(x+alpha*d) <= f(x)+c1*alpha*(g·d) 的 alpha。
-    """
-    slope = float(g @ d)
-    if slope >= 0:
-        raise ValueError('direction is not descending')
-    alpha = alpha0
-    fx = f(x)
-    for _ in range(100):
-        trial = x + alpha * d
-        if bounds is None or np.all((trial >= bounds[0]) & (trial <= bounds[1])):
-            val = f(trial)
-            if np.isfinite(val) and val <= fx + c1 * alpha * slope:
-                return alpha
-        alpha *= rho
-    raise RuntimeError('Armijo line search failed')
+if __package__:
+    from .plot_style import configure_chinese_plotting
+else:
+    from plot_style import configure_chinese_plotting
 
-# 统一维护 history，便于输出过程、生成收敛曲线、后续验收分析。
-def record(k, x, f, g, previous=None, **extra):
-    """记录单次迭代：位置、函数值、前后函数值变化量以及梯度范数。"""
-    # 将函数值、梯度范数转换成普通浮点数，方便直接写入 JSON 文件。
-    fx = float(f(x))
-    gradient_norm = float(np.linalg.norm(g(x)))
-    delta_f = None if previous is None else abs(fx - previous)
-
-    return {
-        "k": k,                    # 从 0 开始的迭代编号
-        "x": np.asarray(x).tolist(),
-        "f": fx,                    # 当前目标函数值
-        "delta_f": delta_f,        # 目标函数相邻两次变化量
-        "grad_norm": gradient_norm, # ||∇f(x)||，常用停止判据
-        **extra,                   # 如 alpha（步长）等算法专用字段
-    }
-
-# 核心迭代器：计算梯度 → 选择搜索方向 → 求步长 → 更新位置 → 判断收敛。
-def optimize(
-    f, g, x0, method='sd', hess=None, Q=None,
-    tol=1e-6, max_iter=20000, bounds=None, progress=None,
-):
-    """实验二专用：最速下降（可精确线搜索）和步长 1 的基本牛顿法。"""
-    if method not in ('sd', 'newton'):
-        raise ValueError('实验二只支持 sd/newton')
-    x = np.array(x0, dtype=float)
-    hist = [record(0, x, f, g)]
-    status = 'iteration_limit'
-    for k in range(max_iter):
-        gx = g(x)
-        if np.linalg.norm(gx) <= tol:
-            status = 'gradient_tolerance'
-            break
-        # 牛顿法方向 d=-[∇²f(x)]^{-1}∇f(x)；最速下降法方向 d=-∇f(x)。
-        if method == 'newton':
-            try:
-                d = np.linalg.solve(hess(x), -gx)
-            except np.linalg.LinAlgError:
-                status = 'singular_hessian'
-                break
-            # 按本实验要求使用最基本的牛顿法：固定 alpha=1，不进行阻尼。
-            alpha = 1.0
-        else:
-            d = -gx
-            if gx @ d >= -1e-12 * np.linalg.norm(gx) * max(np.linalg.norm(d), 1e-30):
-                d = -gx
-            # 对正定二次函数精确线搜索：alpha=-g^T d/(d^T Q d)。
-            # 非二次函数不提供 Q，此时采用 Armijo 回溯选步长。
-            if Q is not None:
-                curvature = float(d @ Q @ d)
-                if curvature <= 0:
-                    status = 'unbounded_descent_ray'
-                    break
-                alpha = float(-gx @ d / curvature)
-            else:
-                try:
-                    alpha = armijo(f, x, gx, d, bounds=bounds)
-                except RuntimeError:
-                    status = 'line_search_failed'
-                    break
-        xn = x + alpha * d
-        if not np.all(np.isfinite(xn)):
-            status = 'nonfinite'
-            break
-        old = hist[-1]['f']
-        x = xn
-        iteration = record(k + 1, x, f, g, old, alpha=alpha)
-        hist.append(iteration)
-
-        # 回调只负责显示信息，不修改位置 x 或更新公式。
-        if progress is not None:
-            progress(iteration)
-    # 状态与完整 history 一并返回，方便后续对比各算法收敛情况。
-    return {
-        "method": method,
-        "status": status,
-        "x": x.tolist(),
-        "f": float(f(x)),
-        "grad_norm": float(np.linalg.norm(g(x))),
-        "iterations": len(hist) - 1,
-        "history": hist,
-    }
-
-
-# ==============================================================================
-# 3. 运行实验与导出结果
-# ==============================================================================
 
 # 一行代表一次迭代，适合在 Excel 中观察数据变化。
 def write_csv(path, rows):
@@ -248,7 +132,6 @@ def write_csv(path, rows):
     if not rows:
         return
 
-    # 保留字段第一次出现的顺序，并且兼容不同迭代记录包含不同字段。
     columns = list(dict.fromkeys(key for row in rows for key in row))
 
     with path.open("w", encoding="utf-8-sig", newline="") as file:
@@ -265,21 +148,12 @@ def write_csv(path, rows):
             }
             writer.writerow(csv_row)
 
-# 实验总控：遍历题目与算法，保存过程记录，并打印简洁的运行摘要。
 def run(out, verbose=True):
     """运行问题 I、II 的二次型与问题 III 的非二次函数。"""
     out.mkdir(parents=True, exist_ok=True)
-    plt.rcParams.update({
-        "font.family": "DejaVu Sans",
-        "font.size": 10,
-        "axes.grid": True,
-        "grid.alpha": 0.25,
-    })
+    configure_chinese_plotting()
     data = {"exp2": {}}
 
-    if verbose:
-        print("\n========== 实验二：最速下降法与牛顿法 ==========", flush=True)
-        print("提示：sd=最速下降法，newton=基本牛顿法", flush=True)
 
     # 第一部分：两组不同的正定 Hessian，对比迭代速度。
     for prob, Q, f, g, h in [
@@ -291,12 +165,11 @@ def run(out, verbose=True):
         for method in ["sd", "newton"]:
             if verbose:
                 print(f"  开始 {method}：", flush=True)
-            r = optimize(
-                f, g, [-30.0, 100.0], method,
-                hess=h, Q=Q,
-                progress=(lambda row: print_progress(row, every=1000))
-                         if verbose else None,
-            )
+            progress = (lambda row: print_progress(row, every=1000)) if verbose else None
+            if method == "sd":
+                r = steepest_descent(f, g, [-30.0, 100.0], Q=Q, progress=progress)
+            else:
+                r = newton(f, g, [-30.0, 100.0], hess=h, progress=progress)
             r["hessian_eigenvalues"] = np.linalg.eigvalsh(Q).tolist()
             data["exp2"][f"{prob}_{method}"] = r
             if verbose:
@@ -312,12 +185,11 @@ def run(out, verbose=True):
         for method in ["sd", "newton"]:
             if verbose:
                 print(f"  开始 {method}：", flush=True)
-            r = optimize(
-                f3, g3, x0, method,
-                hess=h3, max_iter=50000,
-                progress=(lambda row: print_progress(row, every=1000))
-                         if verbose else None,
-            )
+            progress = (lambda row: print_progress(row, every=1000)) if verbose else None
+            if method == "sd":
+                r = steepest_descent(f3, g3, x0, max_iter=50000, progress=progress)
+            else:
+                r = newton(f3, g3, x0, hess=h3, max_iter=50000, progress=progress)
             r["t"] = (r["x"][0] + 3) ** 2 + r["x"][1] ** 2 / 2
             r["optimal_value_gap"] = r["f"] - radial(tstar)[0]
             r["hessian_eigenvalues"] = np.linalg.eigvalsh(h3(np.array(r["x"]))).tolist()
@@ -331,18 +203,22 @@ def run(out, verbose=True):
         if "history" in r:
             write_csv(out / f"exp2_{key}.csv", r["history"])
 
-    fig, ax = plt.subplots(figsize=(7, 4))
+    fig, ax = plt.subplots(figsize=(7.5, 5.2))
     for name, r in data["exp2"].items():
         if "history" not in r:
             continue
         iterations = [row["k"] for row in r["history"]]
         gradient_norms = [max(row["grad_norm"], 1e-16)
                           for row in r["history"]]
-        ax.semilogy(iterations, gradient_norms, label=name)
-    ax.set(xlabel="Iteration k", ylabel="Gradient norm", title="exp2")
+        problem, method = name.rsplit("_", 1)
+        problem_text = {"I": "问题Ⅰ", "II": "问题Ⅱ", "III_far": "问题Ⅲ 远初值", "III_near": "问题Ⅲ 近初值"}[problem]
+        method_text = {"sd": "最速下降法", "newton": "基本牛顿法"}[method]
+        ax.semilogy(iterations, gradient_norms, label=f"{problem_text} {method_text}")
+    ax.set(xlabel="迭代次数 k", ylabel="梯度范数", title="最速下降法与基本牛顿法收敛对比")
     ax.set_xscale("symlog", linthresh=10)
-    ax.set_xlabel("Iteration k (symlog scale)")
-    ax.legend(fontsize=7, ncol=2)
+    ax.set_xlabel("迭代次数 k（对称对数刻度）")
+    ax.legend(fontsize=8.5, ncol=2, loc="upper center",
+              bbox_to_anchor=(0.5, -0.19), frameon=False)
     fig.tight_layout()
     fig.savefig(out / "exp2_gradient.png", dpi=180)
     plt.close(fig)

@@ -1,7 +1,7 @@
-"""单文件实验三：BFGS、DFP 和 PRP+ 非线性共轭梯度法。
+"""实验三：BFGS、DFP 和 PRP+ 非线性共轭梯度法。
 
 默认打印迭代进度与每种方法的最终结果；--quiet 仅保存文件。
-实际函数 f4、f5 及梯度/Hessian 写在文件顶部；算法在后面。
+实际函数 f4、f5 及梯度/Hessian 写在文件顶部；各方法的算法分别在 methods/ 目录。
 """
 
 import argparse
@@ -102,117 +102,20 @@ def print_summary(result):
 # ==============================================================================
 
 # 只负责选步长，不负责更新 x；适用于最速下降法、拟牛顿法等。
-def armijo(f, x, g, d, alpha0=1.0, c1=0.0001, rho=0.5, bounds=None):
-    """Armijo 回溯线搜索：逐步缩小 alpha，直到目标函数有足够的下降量。
+# 算法已按方法拆到 code/methods/；目标函数仍在本文件顶部。
+if __package__:
+    from .methods.bfgs import bfgs
+    from .methods.dfp import dfp
+    from .methods.conjugate_gradient import conjugate_gradient
+else:
+    from methods.bfgs import bfgs
+    from methods.dfp import dfp
+    from methods.conjugate_gradient import conjugate_gradient
 
-    f：目标函数；x：当前位置；g：当前位置的梯度；d：下降方向。
-    c1：充分下降系数；rho：每次回溯后步长乘以 rho。
-    返回满足 f(x+alpha*d) <= f(x)+c1*alpha*(g·d) 的 alpha。
-    """
-    slope = float(g @ d)
-    if slope >= 0:
-        raise ValueError('direction is not descending')
-    alpha = alpha0
-    fx = f(x)
-    for _ in range(100):
-        trial = x + alpha * d
-        if bounds is None or np.all((trial >= bounds[0]) & (trial <= bounds[1])):
-            val = f(trial)
-            if np.isfinite(val) and val <= fx + c1 * alpha * slope:
-                return alpha
-        alpha *= rho
-    raise RuntimeError('Armijo line search failed')
-
-# 统一维护 history，便于输出过程、生成收敛曲线、后续验收分析。
-def record(k, x, f, g, previous=None, **extra):
-    """记录单次迭代：位置、函数值、前后函数值变化量以及梯度范数。"""
-    # 将函数值、梯度范数转换成普通浮点数，方便直接写入 JSON 文件。
-    fx = float(f(x))
-    gradient_norm = float(np.linalg.norm(g(x)))
-    delta_f = None if previous is None else abs(fx - previous)
-
-    return {
-        "k": k,                    # 从 0 开始的迭代编号
-        "x": np.asarray(x).tolist(),
-        "f": fx,                    # 当前目标函数值
-        "delta_f": delta_f,        # 目标函数相邻两次变化量
-        "grad_norm": gradient_norm, # ||∇f(x)||，常用停止判据
-        **extra,                   # 如 alpha（步长）等算法专用字段
-    }
-
-# 核心迭代器：计算梯度 → 选择搜索方向 → 求步长 → 更新位置 → 判断收敛。
-def optimize(f, g, x0, method='bfgs', tol=1e-06, max_iter=20000, bounds=None, progress=None):
-    """实验三专用：BFGS / DFP 拟牛顿法与 PRP+ 非线性共轭梯度法。"""
-    if method not in ('bfgs', 'dfp', 'prp'):
-        raise ValueError('实验三只支持 bfgs/dfp/prp')
-    x = np.array(x0, dtype=float)
-    # H 近似 Hessian 的逆矩阵，初始取单位矩阵；每次通过 s、y 更新。
-    H = np.eye(len(x))
-    d = -g(x)
-    hist = [record(0, x, f, g)]
-    status = 'iteration_limit'
-    for k in range(max_iter):
-        gx = g(x)
-        if np.linalg.norm(gx) <= tol:
-            status = 'gradient_tolerance'
-            break
-        # 拟牛顿方向 d=-H*g；PRP+ 方向由上一步的 d 与 beta 递推。
-        if method in ('bfgs', 'dfp'):
-            d = -H @ gx
-        # 若数值误差使方向不再下降，重启为最速下降方向并重置 H。
-        if gx @ d >= -1e-12 * np.linalg.norm(gx) * max(np.linalg.norm(d), 1e-30):
-            d = -gx
-            H = np.eye(len(x))
-        try:
-            alpha = armijo(f, x, gx, d, bounds=bounds)
-        except RuntimeError:
-            status = 'line_search_failed'
-            break
-        xn = x + alpha * d
-        if not np.all(np.isfinite(xn)):
-            status = 'nonfinite'
-            break
-        gn = g(xn)
-        # s = x_(k+1)-x_k, y = g_(k+1)-g_k 是拟牛顿更新的两个向量。
-        s = xn - x
-        y = gn - gx
-        sy = float(s @ y)
-        if method in ('bfgs', 'dfp') and sy > 1e-12 * np.linalg.norm(s) * np.linalg.norm(y):
-            # BFGS、DFP 都直接更新 Hessian 的逆近似 H，避免每轮求逆。
-            if method == 'bfgs':
-                V = np.eye(len(x)) - np.outer(s, y) / sy
-                H = V @ H @ V.T + np.outer(s, s) / sy
-            else:
-                Hy = H @ y
-                yh = float(y @ Hy)
-                if yh > 0:
-                    H += np.outer(s, s) / sy - np.outer(Hy, Hy) / yh
-            H = (H + H.T) / 2
-        # PRP+：beta=max(0, g_(k+1)^T(g_(k+1)-g_k)/(g_k^T g_k))。
-        # 这里每 n 步重启，且下一轮重新检查是否仍为下降方向。
-        if method == 'prp':
-            beta = max(0.0, float(gn @ y / (gx @ gx)))
-            if (k + 1) % len(x) == 0:
-                beta = 0.0
-            d = -gn + beta * d
-        old = hist[-1]['f']
-        x = xn
-        iteration = record(k + 1, x, f, g, old, alpha=alpha)
-        hist.append(iteration)
-
-        # 回调只负责显示信息，不修改位置 x 或更新公式。
-        if progress is not None:
-            progress(iteration)
-    # 状态与完整 history 一并返回，方便后续对比各算法收敛情况。
-    return {
-        "method": method,
-        "status": status,
-        "x": x.tolist(),
-        "f": float(f(x)),
-        "grad_norm": float(np.linalg.norm(g(x))),
-        "iterations": len(hist) - 1,
-        "history": hist,
-    }
+if __package__:
+    from .plot_style import configure_chinese_plotting
+else:
+    from plot_style import configure_chinese_plotting
 
 
 # ==============================================================================
@@ -246,17 +149,8 @@ def write_csv(path, rows):
 def run(out, verbose=True):
     """在二维问题 IV 和三维问题 V 上分别比较 BFGS、DFP、PRP+。"""
     out.mkdir(parents=True, exist_ok=True)
-    plt.rcParams.update({
-        "font.family": "DejaVu Sans",
-        "font.size": 10,
-        "axes.grid": True,
-        "grid.alpha": 0.25,
-    })
+    configure_chinese_plotting()
     data = {"exp3": {}}
-
-    if verbose:
-        print("\n========== 实验三：拟牛顿法与共轭梯度法 ==========", flush=True)
-        print("提示：BFGS/DFP 更新逆 Hessian；PRP 使用 PRP+ 系数", flush=True)
 
     # 问题 IV 使用两个不同初始点，比较收敛过程。
     # 问题 V 在三维空间求解，适合观察 PRP+ 的重启机制。
@@ -272,29 +166,35 @@ def run(out, verbose=True):
         for method in ["bfgs", "dfp", "prp"]:
             if verbose:
                 print(f"  开始 {method.upper()}：", flush=True)
-            r = optimize(
-                f, g, x0, method, max_iter=20000,
-                progress=(lambda row: print_progress(row, every=1000))
-                         if verbose else None,
-            )
+            progress = (lambda row: print_progress(row, every=1000)) if verbose else None
+            if method == "bfgs":
+                r = bfgs(f, g, x0, max_iter=20000, progress=progress)
+            elif method == "dfp":
+                r = dfp(f, g, x0, max_iter=20000, progress=progress)
+            else:
+                r = conjugate_gradient(f, g, x0, max_iter=20000, progress=progress)
             data["exp3"][f"{label}_{method}"] = r
             write_csv(out / f"exp3_{label}_{method}.csv", r["history"])
             if verbose:
                 print_summary(r)
 
     # 使用梯度范数展示算法是否持续向驻点收敛。
-    fig, ax = plt.subplots(figsize=(7, 4))
+    fig, ax = plt.subplots(figsize=(7.5, 5.2))
     for name, r in data["exp3"].items():
         if "history" not in r:
             continue
         iterations = [row["k"] for row in r["history"]]
         gradient_norms = [max(row["grad_norm"], 1e-16)
                           for row in r["history"]]
-        ax.semilogy(iterations, gradient_norms, label=name)
-    ax.set(xlabel="Iteration k", ylabel="Gradient norm", title="exp3")
+        problem, method = name.rsplit("_", 1)
+        problem_text = {"IV_a": "问题Ⅳ 初值(1,0.7)", "IV_b": "问题Ⅳ 初值(1,2)", "V": "问题Ⅴ"}[problem]
+        method_text = {"bfgs": "BFGS拟牛顿法", "dfp": "DFP拟牛顿法", "prp": "PRP+共轭梯度法"}[method]
+        ax.semilogy(iterations, gradient_norms, label=f"{problem_text} {method_text}")
+    ax.set(xlabel="迭代次数 k", ylabel="梯度范数", title="拟牛顿法与共轭梯度法收敛对比")
     ax.set_xscale("symlog", linthresh=10)
-    ax.set_xlabel("Iteration k (symlog scale)")
-    ax.legend(fontsize=7, ncol=2)
+    ax.set_xlabel("迭代次数 k（对称对数刻度）")
+    ax.legend(fontsize=8.5, ncol=2, loc="upper center",
+              bbox_to_anchor=(0.5, -0.19), frameon=False)
     fig.tight_layout()
     fig.savefig(out / "exp3_gradient.png", dpi=180)
     plt.close(fig)

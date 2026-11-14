@@ -1,8 +1,4 @@
-"""单文件实验一：进退法、黄金分割法、课堂三点抛物线法与 Armijo 线搜索。
 
-PyCharm 直接运行本文件即可。默认显示关键迭代过程；添加 --quiet 可关闭输出。
-实际函数 scalar_f、phi 及其导数写在导入语句后；算法实现位于其后。
-"""
 
 import argparse
 import csv
@@ -20,11 +16,6 @@ matplotlib.use("Agg")  # 适用于 PyCharm：图片保存为 PNG，不强制弹�
 import matplotlib.pyplot as plt
 import numpy as np
 from scipy.optimize import brentq  # 只用于计算高精度参照解，不代替实验算法。
-
-
-# ==============================================================================
-# 1. 实际问题的目标函数与导数  修改题目先看这里
-# ==============================================================================
 
 # f 是目标函数，输入和输出都是标量。
 def scalar_f(x):
@@ -61,13 +52,11 @@ def phi_g(x):
 
 
 def fmt_vector(values, precision=5):
-    """统一格式化迭代点或搜索方向，避免 NumPy 的浮点表示占满控制台。"""
     arr = np.asarray(values, dtype=float)
     return "[" + ", ".join(f"{value:.{precision}g}" for value in arr) + "]"
 
 
 def print_progress(row, every=1000):
-    """长迭代过程只打印前 3 次、整百/整千次，减少刷屏。"""
     k = row["k"]
     if k <= 3 or k % every == 0:
         alpha = row.get("alpha")
@@ -80,7 +69,6 @@ def print_progress(row, every=1000):
 
 
 def print_summary(result):
-    """用统一格式概括目标函数值、迭代次数与最终状态。"""
     print(
         f"  -> 状态={result.get('status', 'completed')}；"
         f"迭代={result['iterations']}；"
@@ -95,226 +83,26 @@ def print_summary(result):
 # ==============================================================================
 
 # 先判断初始步长是否使函数下降；若没有，就反向试探，再按倍增步长寻找拐回上升的位置。
-def bracket(f, x0=0.0, step=0.1, bounds=(-20.0, 20.0), max_iter=100):
-    """进退法：从初始点 x0 向函数值下降的方向扩展，找到包含极小点的三点区间。
+# 算法已按方法拆到 code/methods/；目标函数仍在本文件顶部。
+if __package__:
+    from .methods.bracketing import bracket
+    from .methods.golden_section import golden
+    from .methods.parabolic_interpolation import parabolic
+    from .methods.armijo_search import steepest_descent
+else:
+    from methods.bracketing import bracket
+    from methods.golden_section import golden
+    from methods.parabolic_interpolation import parabolic
+    from methods.armijo_search import steepest_descent
 
-    x0：起始搜索点；step：初始试探步长；bounds：允许的搜索范围。
-    返回 (a, m, b)，其中 a < m < b，且 f(m) 不大于两侧函数值。
-    """
-    if step <= 0 or not bounds[0] <= x0 <= bounds[1]:
-        raise ValueError('invalid initial point or step')
-    # 第一阶段：先沿初始方向试探。如果函数值不降反升，再试反方向。
-    a = x0
-    b = a + step
-    if not bounds[0] <= b <= bounds[1]:
-        raise ValueError('trial outside bounds')
-    fa, fb = (f(a), f(b))
-    if fb >= fa:
-        b = a - step
-        if not bounds[0] <= b <= bounds[1]:
-            raise ValueError('trial outside bounds')
-        fb = f(b)
-        if fb >= fa:
-            return (a - step, a, a + step)
-        step = -step
-    # 第二阶段：每次将步长扩大为原来的 2 倍，直到遇到函数值回升。
-    for _ in range(max_iter):
-        step *= 2
-        c = b + step
-        if not bounds[0] <= c <= bounds[1]:
-            raise RuntimeError('cannot bracket within bounds')
-        fc = f(c)
-        if fc >= fb:
-            return tuple(sorted([a, b, c]))
-        a, b, fa, fb = (b, c, fb, fc)
-    raise RuntimeError('bracketing iteration limit')
-
-# 每轮比较两个内部点的函数值，删除不可能包含最优点的一侧区间。
-def golden(f, a, b, tol=1e-06, max_iter=1000):
-    """黄金分割法：使用 0.618 比例不断缩小单峰区间。
-
-    tau = (sqrt(5) - 1)/2；每轮复用一个旧试探点，避免重复计算函数值。
-    返回 (近似极小点, 每轮迭代记录)。
-    """
-    if not a < b or tol <= 0:
-        raise ValueError('invalid interval/tolerance')
-    # tau≈0.618；两个内部试探点关于区间中心对称。
-    tau = (math.sqrt(5) - 1) / 2
-    c = b - tau * (b - a)
-    d = a + tau * (b - a)
-    fc, fd = (f(c), f(d))
-    hist = [dict(k=0, x=(a + b) / 2, width=b - a)]
-    for k in range(1, max_iter + 1):
-        if b - a <= tol:
-            return ((a + b) / 2, hist)
-        # f(c) 更小，极小点不可能在 (d, b)；否则去掉左侧 (a, c)。
-        if fc <= fd:
-            b, d, fd = (d, c, fc)
-            c = b - tau * (b - a)
-            fc = f(c)
-        else:
-            a, c, fc = (c, d, fd)
-            d = a + tau * (b - a)
-            fd = f(d)
-        hist.append(dict(k=k, x=(a + b) / 2, width=b - a))
-    raise RuntimeError('golden section iteration limit')
-
-# 使用区间内的三个试点拟合二次函数，取其顶点为新的试探点。
-def parabolic(f, a, b, tol=1e-06, max_iter=1000, middle=None):
-    """课堂版三点抛物线插值法（2026-10-16 课件，第118张）。
-
-    取 x1 < x2 < x3，且 f(x2) 小于两侧函数值。用三点构造
-       q(x) = A*x**2 + B*x + C
-    并取抛物线驻点 x_bar = -B/(2*A)。教材公式是：
-       B_i = (x_j**2 - x_k**2)*f(x_i)
-       C_i = (x_j - x_k)*f(x_i)
-       x_bar = sum(B_i) / (2*sum(C_i))
-    这里将坐标原点移至 x2，用等价的差商形式计算，避免直接平方
-    相近的 x1、x2、x3 造成相减消去误差。
-
-    当 |x_bar - x2| < tol 时停止；否则在四点中按函数值更新
-    中心最优点及其左右邻点。不调用 Brent，也不以黄金分割兜底。
-    """
-    if not a < b or tol <= 0:
-        raise ValueError('invalid interval/tolerance')
-    x1, x2, x3 = (float(a), float((a + b) / 2 if middle is None else middle), float(b))
-    if not x1 < x2 < x3:
-        raise ValueError('middle point must lie strictly inside the interval')
-    f1, f2, f3 = (f(x1), f(x2), f(x3))
-    if not (f2 <= f1 and f2 <= f3):
-        raise ValueError('initial middle point must bracket a minimum')
-    hist = [dict(k=0, x=x2, width=x3 - x1, x1=x1, x2=x2, x3=x3)]
-    for k in range(1, max_iter + 1):
-        left_dx, right_dx = (x1 - x2, x3 - x2)
-        # 用一阶差商估计二次拟合的系数，数值上等价于课堂三点插值公式。
-        slope_l = (f1 - f2) / left_dx
-        slope_r = (f3 - f2) / right_dx
-        quad_a = (slope_r - slope_l) / (right_dx - left_dx)
-        quad_b = slope_l - quad_a * left_dx
-        if not np.isfinite(quad_a) or quad_a <= 0:
-            raise RuntimeError('interpolation parabola does not open upwards')
-        # 拟合二次函数 q(z)=A(z-x2)^2+B(z-x2)+C。
-        # 令 q'(z)=0，可得到抛物线顶点 x_bar=x2-B/(2A)。
-        x_bar = x2 - quad_b / (2 * quad_a)
-        if not x1 < x_bar < x3:
-            raise RuntimeError('interpolated point left the bracketing interval')
-        if abs(x2 - x_bar) < tol:
-            hist.append({
-                "k": k,
-                "x": x_bar,
-                "width": x3 - x1,
-                "x1": x1,
-                "x2": x2,
-                "x3": x3,
-                "x_bar": x_bar,
-                "stop": "abs(x_bar-x2)<tol",
-            })
-            return (x_bar, hist)
-        f_bar = f(x_bar)
-        # 根据新点位于中心 x2 的哪一侧，以及目标函数是否更小，
-        # 更新 x1 < x2 < x3，并保持 f(x2) <= f(x1), f(x3)。
-        if x_bar < x2:
-            if f_bar <= f2:
-                x3, f3 = (x2, f2)
-                x2, f2 = (x_bar, f_bar)
-            else:
-                x1, f1 = (x_bar, f_bar)
-        elif f_bar <= f2:
-            x1, f1 = (x2, f2)
-            x2, f2 = (x_bar, f_bar)
-        else:
-            x3, f3 = (x_bar, f_bar)
-        hist.append(dict(k=k, x=x2, width=x3 - x1, x1=x1, x2=x2, x3=x3, x_bar=x_bar))
-    raise RuntimeError('parabolic interpolation iteration limit')
-
-# 只负责选步长，不负责更新 x；适用于最速下降法、拟牛顿法等。
-def armijo(f, x, g, d, alpha0=1.0, c1=0.0001, rho=0.5, bounds=None):
-    """Armijo 回溯线搜索：逐步缩小 alpha，直到目标函数有足够的下降量。
-
-    f：目标函数；x：当前位置；g：当前位置的梯度；d：下降方向。
-    c1：充分下降系数；rho：每次回溯后步长乘以 rho。
-    返回满足 f(x+alpha*d) <= f(x)+c1*alpha*(g·d) 的 alpha。
-    """
-    slope = float(g @ d)
-    if slope >= 0:
-        raise ValueError('direction is not descending')
-    alpha = alpha0
-    fx = f(x)
-    for _ in range(100):
-        trial = x + alpha * d
-        if bounds is None or np.all((trial >= bounds[0]) & (trial <= bounds[1])):
-            val = f(trial)
-            if np.isfinite(val) and val <= fx + c1 * alpha * slope:
-                return alpha
-        alpha *= rho
-    raise RuntimeError('Armijo line search failed')
-
-# 统一维护 history，便于输出过程、生成收敛曲线、后续验收分析。
-def record(k, x, f, g, previous=None, **extra):
-    """记录单次迭代：位置、函数值、前后函数值变化量以及梯度范数。"""
-    # 将函数值、梯度范数转换成普通浮点数，方便直接写入 JSON 文件。
-    fx = float(f(x))
-    gradient_norm = float(np.linalg.norm(g(x)))
-    delta_f = None if previous is None else abs(fx - previous)
-
-    return {
-        "k": k,                    # 从 0 开始的迭代编号
-        "x": np.asarray(x).tolist(),
-        "f": fx,                    # 当前目标函数值
-        "delta_f": delta_f,        # 目标函数相邻两次变化量
-        "grad_norm": gradient_norm, # ||∇f(x)||，常用停止判据
-        **extra,                   # 如 alpha（步长）等算法专用字段
-    }
-
-# 核心迭代器：计算梯度 → 选择搜索方向 → 求步长 → 更新位置 → 判断收敛。
-def optimize(f, g, x0, method='sd', tol=1e-06, max_iter=20000, bounds=None, progress=None):
-    """实验一专用：最速下降方向 + Armijo 非精确线搜索。"""
-    if method != 'sd':
-        raise ValueError('实验一只支持 sd 方法')
-    x = np.array(x0, dtype=float)
-    hist = [record(0, x, f, g)]
-    status = 'iteration_limit'
-    for k in range(max_iter):
-        gx = g(x)
-        if np.linalg.norm(gx) <= tol:
-            status = 'gradient_tolerance'
-            break
-        # 实验一中 d=-∇f(x)，即沿着目标函数最快下降的方向移动。
-        d = -gx
-        try:
-            alpha = armijo(f, x, gx, d, bounds=bounds)
-        except RuntimeError:
-            status = 'line_search_failed'
-            break
-        xn = x + alpha * d
-        if not np.all(np.isfinite(xn)):
-            status = 'nonfinite'
-            break
-        old = hist[-1]['f']
-        x = xn
-        iteration = record(k + 1, x, f, g, old, alpha=alpha)
-        hist.append(iteration)
-
-        # 回调只负责显示信息，不修改位置 x 或更新公式。
-        if progress is not None:
-            progress(iteration)
-    # 状态与完整 history 一并返回，方便后续对比各算法收敛情况。
-    return {
-        "method": method,
-        "status": status,
-        "x": x.tolist(),
-        "f": float(f(x)),
-        "grad_norm": float(np.linalg.norm(g(x))),
-        "iterations": len(hist) - 1,
-        "history": hist,
-    }
+if __package__:
+    from .plot_style import configure_chinese_plotting
+else:
+    from plot_style import configure_chinese_plotting
 
 
-# ==============================================================================
-# 3. 运行实验与导出结果
-# ==============================================================================
 
-# 一行代表一次迭代，适合在 Excel 中观察数据变化。
+
 def write_csv(path, rows):
     """导出迭代过程到 CSV：每行一次迭代，每列一个观测量。"""
     if not rows:
@@ -341,12 +129,7 @@ def write_csv(path, rows):
 def run(out, verbose=True):
     """依次执行进退法、黄金分割法、三点插值法及 Armijo，并输出实验数据。"""
     out.mkdir(parents=True, exist_ok=True)
-    plt.rcParams.update({
-        "font.family": "DejaVu Sans",
-        "font.size": 10,
-        "axes.grid": True,
-        "grid.alpha": 0.25,
-    })
+    configure_chinese_plotting()
 
     data = {
         "environment": {
@@ -420,7 +203,7 @@ def run(out, verbose=True):
             # 画 ln(|x_k-x_ref|)，观察收敛趋势。
             error = [max(abs(item["x"] - reference), np.finfo(float).eps)
                      for item in history]
-            ax.plot([item["k"] for item in history], np.log(error), label=method)
+            ax.plot([item["k"] for item in history], np.log(error), label={"golden": "黄金分割法", "parabolic": "三点抛物线插值法"}[method])
 
             if verbose:
                 print(f"    {method}: 迭代={len(history)-1}, "
@@ -440,9 +223,9 @@ def run(out, verbose=True):
                           f"区间长度={item['width']:.3e}", flush=True)
 
         ax.set(
-            xlabel="Iteration k",
-            ylabel="ln |x_k - x_ref|",
-            title=f"Line search: {name}",
+            xlabel="迭代次数 k",
+            ylabel=r"位置误差的自然对数 $\ln|x_k-x_{\mathrm{ref}}|$",
+            title="函数 f 的一维搜索误差对比" if name == "f" else "函数 φ 的一维搜索误差对比",
         )
         ax.legend()
         fig.tight_layout()
@@ -454,7 +237,7 @@ def run(out, verbose=True):
         print("\n[3/4] Armijo 最速下降法", flush=True)
     af = lambda z: scalar_f(float(z[0]))
     ag = lambda z: np.array([scalar_g(float(z[0]))])
-    ar = optimize(af, ag, [m], tol=1e-8, bounds=(-20.0, 20.0),
+    ar = steepest_descent(af, ag, [m], tol=1e-8, bounds=(-20.0, 20.0),
                   progress=(lambda row: print_progress(row, every=10)) if verbose else None)
     ar["reference"] = xref
     ar["abs_error"] = abs(ar["x"][0] - xref)
@@ -470,7 +253,7 @@ def run(out, verbose=True):
     tasks = {
         "golden": lambda: golden(scalar_f, a, b)[0],
         "parabolic": lambda: parabolic(scalar_f, a, b, middle=m)[0],
-        "armijo": lambda: optimize(af, ag, [m], tol=1e-8,
+        "armijo": lambda: steepest_descent(af, ag, [m], tol=1e-8,
                                    bounds=(-20.0, 20.0))["x"][0],
     }
 

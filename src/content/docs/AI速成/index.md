@@ -1,7 +1,7 @@
 ---
 title: AI 生成的复习资料
 description: 按课程整理的 AI 生成复习资料。
-lastUpdated: 2026-11-13
+lastUpdated: 2026-11-14
 sidebar: 
   label: 概览
   order: 1
