@@ -4870,12 +4870,12 @@
     },
     ".idea/workspace.xml": {
       "ipo_ts": 1785985177694,
-      "edit_count": 6,
-      "last_lines": 262,
-      "last_ts": 1786032515170,
+      "edit_count": 7,
+      "last_lines": 454,
+      "last_ts": 1795022714062,
       "delisted": false,
       "last_source": "onEdit",
-      "last_content_hash": "333ecfb2"
+      "last_content_hash": "1f4afa65"
     },
     "src/content/docs/math/index.md": {
       "ipo_ts": 1795014707430,
